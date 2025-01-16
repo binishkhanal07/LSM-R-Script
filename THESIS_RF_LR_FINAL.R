@@ -209,67 +209,8 @@ scaled_test <- as.data.frame(scale(data_test, center = mins, scale = maxs - mins
 scaled_tst <-scaled_test
 scaled_tst$Testing <- ifelse(scaled_tst$Testing == 1, "yes","no")
 
-# Create one file contain all data
-names(scaled_tst)
-scaled_tst$Slides=scaled_tst$Testing
-names(scaled_t)
-scaled_t$Slides=scaled_t$Training
-
-All_incidents <- merge(scaled_tst[,-1], scaled_t[,-1], all=TRUE) #Full outer join: To keep all rows from both data frames, specify all=TRUE.  https://www.dummies.com/programming/r/how-to-use-the-merge-function-with-data-sets-in-r/
-str(All_incidents)
-All_incidents <- All_incidents[,c(38,1:37)] # re-order columns
-
-scaled_tst$Slides= NULL  # remove Slide column
-scaled_t$Slides=NULL  # remove Slide column
-
-
-# To predict which variable would be the best one for splitting the Decision Tree, plot a graph that represents the split for each of the 9 variables, ####
-
-#Creating seperate dataframe for '"LevelsAve" features which is our target.
-number.perfect.splits <- apply(X=All_incidents, MARGIN = 2, FUN = function(col){
-  t <- table(All_incidents$Slides,col)
-  sum(t == 0)})
-
-# Descending order of perfect splits
-order <- order(number.perfect.splits,decreasing = TRUE)
-number.perfect.splits <- number.perfect.splits[order]
-
-# Plot graph
-par(mar=c(10,2,2,2))
-barplot(number.perfect.splits,main="Number of perfect splits vs feature",xlab="",ylab="Feature",las=3,col="wheat") # Slope and SPI are the best classifiers
-
-
-# Step 2: Data Visualization
-data_train2=data_train
-data_train2$Training <- ifelse(data_train2$Training == 1, "yes","no")
-data_test2=data_test
-data_test2$Testing <- ifelse(data_test2$Testing == 0, "no","yes")
-
-# Create one file contain all data
-data_test2$Slides=data_test2$Testing
-data_train2$Slides=data_train2$Training
-
-All_incidents_orginal <- merge(data_train2[,-1], data_test2[,-1], all=TRUE) #Full outer join: To keep all rows from both data frames, specify all=TRUE.  https://www.dummies.com/programming/r/how-to-use-the-merge-function-with-data-sets-in-r/
-str(All_incidents_orginal)
-All_incidents_orginal <- All_incidents_orginal [,c(38,1:37)] # re-order columns
-
-
-#Visual Elevation
-ggplot(All_incidents_orginal, aes(ELEVATION, colour = Slides)) +
-  geom_freqpoly(binwidth = 1) + labs(title="Elevation Distribution by Landslides occurances")
-
-#Visual Slope
-ggplot(All_incidents_orginal, aes(SLOPE, colour = Slides)) +
-  geom_freqpoly(binwidth = 1) + labs(title="Slope Distribution by Landslides occurances")
-
-
-
 # RANDOM FOREST MODELING
 
-# Step 1) Default settings
-
-
-# USING ANOTHER MODEL WITH LESSER ACCURACY AND ROC VALUE
 rf_control <- trainControl(
   method = "cv",
   number = 5,
@@ -295,7 +236,6 @@ print(rf_model)
 rf_importance <- varImp(rf_model, scale = T)
 print(rf_importance)
 plot(rf_importance, main = "Variable Importance in Random Forest")
-
 
 # For Determining Mean Decrease Accuracy and Mean Decrease Gini
 set.seed(1234)
@@ -331,7 +271,7 @@ coefficients <- as.data.frame(coef(summary(lr_model)))
 coefficients$Variable <- rownames(coefficients)
 write.csv(coefficients,"Model_Summary.csv",row.names=FALSE)
 
-#Extract Model Coefficients
+# Extract Model Coefficients
 coefficients_n <- summary(lr_model)$coefficients
 coefficients_n <- na.omit(coefficients)
 
@@ -344,7 +284,6 @@ equation <- paste0(
   )
 )
 cat(equation)
-
 
 
 #SUCCESS RATE CURVE FOR RF AND LR
@@ -511,15 +450,10 @@ confusionMatrix(as.factor(lr_train_class), as.factor(scaled_t$Training))
 # Confusion Matrix for Testing Datasets in LR Model
 confusionMatrix(as.factor(lr_test_class),as.factor(scaled_tst$Testing))
 
-# 6  Produce prediction map using Raster data ---------------------------
 
+# Produce LSM map using Training model results and Raster layers data
 
-# 6-1Import and process thematic maps ------------------------------------
-
-
-#Produce LSM map using Training model results and Raster layers data
-
-# Import Raster
+# Import Rasters
 
 # load all the data
 Aspect = raster("MyData/Aspect.tif")
@@ -586,7 +520,7 @@ SPI = raster("ReData/SPI.tif")
 TWI = raster("ReData/TWI.tif")
 
 
-# check attributes and projection and extent
+# check attributes and projection and extent whether same for all or not
 extent(ASPECT)
 extent(DIST2DRAIN)
 extent(DIST2FAULT)
@@ -602,27 +536,23 @@ extent(SPI)
 extent(TWI)
 
 
-
 # stack multiple raster files
 Stack_List= list.files(path = "./ReData",pattern = "tif$", full.names = TRUE)
 Rasters=stack(Stack_List)
 names(Rasters)
 
 
-# 6-1-1 Convert rasters to dataframe with Long-Lat
+# Convert rasters to dataframe with Long-Lat
 # Convert raster to dataframe with Long-Lat
 Rasters.df = as.data.frame(Rasters, xy = TRUE, na.rm = TRUE)
 head(Rasters.df,1)
 
-
-# Now:Prediction using imported Rasters
-
 Rasters.df_N <- Rasters.df[,c(-1,-2)] # remove x, y
 
 
-# 6-1-2 Dealing with Categorial data
+# Dealing with Categorial data
 
-# Aspect Settings for Testing
+# Aspect Settings
 
 # Replace values less than 0 with a placeholder (e.g., -1 becomes a special case)
 Rasters.df_N$ASPECT_grouped <- ifelse(Rasters.df_N$ASPECT < 0, -1, Rasters.df_N$ASPECT)
@@ -649,7 +579,7 @@ Rasters.df_N <- Rasters.df_N[,-1] # Removing Original Aspect data
 Rasters.df_N <- Rasters.df_N[,-13] # Removing ASPECT_grouped
 #Rasters.df_N <- Rasters.df_N[,-13] # Removing flat areas
 
-# LULC setting for Testing
+# LULC setting
 LULCras<-cut(
   Rasters.df_N$LULC, 
   seq(1,9,1), 
@@ -670,7 +600,7 @@ Rasters.df_N <- Rasters.df_N[,-6] # To remove original LULC
 summary(Rasters.df_N)
 Rasters.df_N <-(na.omit(Rasters.df_N))
 
-# Lithology setting for testing
+# Lithology setting
 Lithologyras<-cut(
   Rasters.df_N$LITHOLOGY, 
   seq(1,11,1), 
@@ -692,9 +622,8 @@ summary(Rasters.df_N)
 Rasters.df_N <-(na.omit(Rasters.df_N))
 str(Rasters.df_N)
 
-# 6-1-3 Scale the numeric variables --------------------------------------
+# Scale the numeric variables
 
-# Check the relationship between the numeric varaibles, Scale the numeric var first!
 maxss <- apply(Rasters.df_N, 2, max) 
 minss <- apply(Rasters.df_N, 2, min)
 Rasters.df_N_scaled <- as.data.frame(scale(Rasters.df_N, center = minss, scale = maxss - minss)) # we removed the Aspect levels because it might be changed to NA!
@@ -723,8 +652,6 @@ spplot(r_ave_no, main="Non-slides Susceptibility Map using RF")
 writeRaster(r_ave_no,filename="Prediction_RF_Tunned_Non_Slide.tif", format="GTiff", overwrite=TRUE) 
 
 
-
-
 # Generating Susceptibility Map from LR Model
 
 lr_map <- as.data.frame(predict(lr_model,Rasters.df_N_scaled, type="response"))
@@ -735,8 +662,6 @@ proj4string(lr_raster)<- CRS(projection(ELEVATION))
 
 spplot(lr_raster, main = "Landslide Susceptibility Map using Logistic Regression")
 writeRaster(lr_raster, filename = "Prediction_LR_Landslide.tif", format = "GTiff",overwrite=TRUE)
-
-
 
 
 # Multicollinearity Check
@@ -755,47 +680,6 @@ summary(vif_model)
 # 1.112526      1.772301      1.619397      1.312533      2.805439      1.386238      1.063864 
 # NDVI PLANCURVATURE PRECIPITATION         SLOPE           SPI           TWI 
 # 1.162232      1.713889      2.357133      2.841957      2.746686      2.117785 
-
-#Writing CSVs of the necessary files
-data_list <- list(data_train = data_train,
-                  data_test=data_test,
-                  scaled_test=scaled_test,
-                  scaled_tst=scaled_tst,
-                  scaled_t=scaled_t,
-                  scaled_train=scaled_train,
-                  All_incidents=All_incidents,
-                  All_incidents_orginal=All_incidents_orginal,
-                  rf_test_predictions=rf_test_predictions,
-                  Rasters_df=Rasters.df,
-                  Rasters_df_N=Rasters.df_N,
-                  Rasters_df_N_scaled=Rasters.df_N_scaled
-)
-file_names <- c("data_train.csv",
-                "data_test.csv",
-                "scaled_test.csv",
-                "scaled_tst.csv",
-                "scaled_t.csv",
-                "scaled_train.csv",
-                "All_incidents.csv",
-                "All_incidents_original.csv",
-                "RF_Test_Predictions.csv",
-                "Rasters_df.csv",
-                "Rasters_df_N.csv",
-                "Rasters_df_N_scaled.csv")
-
-
-output_folder <-"C:/Users/Binish Raj Khanal/Desktop/WD/ROutput"
-
-# Ensure the folder exists (optional: create it if it doesn't)
-if (!dir.exists(output_folder)) {
-  dir.create(output_folder)
-}
-
-# Save each data frame with its corresponding filename in the specified folder
-for (i in seq_along(data_list)) {
-  file_path <- file.path(output_folder, file_names[i]) # Combine folder path and file name
-  write.csv(data_list[[i]], file_path, row.names = FALSE)
-}
 
 
 
