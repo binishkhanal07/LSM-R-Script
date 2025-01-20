@@ -1,15 +1,15 @@
 
-#Setting Working Directory
+# Setting Working Directory
 path="C:/Users/Binish Raj Khanal/Desktop/WD"
 setwd(path)
-getwd() # for checking
+getwd() #Checking the working directory is set correctly or not
 
 # Setting the personal library
 .libPaths("C:/Users/Binish Raj Khanal/Desktop/WD/MyLibrary")
-.libPaths() ## Press tab for options
+.libPaths() # Checking if the personal library 
 
 
-# Define and install/load necessary packages
+# Defining, loading and installing necessary packages
 
 packages <- c(
   "RStoolbox",    # Image analysis & plotting spatial data
@@ -17,7 +17,7 @@ packages <- c(
   "plyr",         # data manipulation
   "dplyr",        # data manipulation
   "RColorBrewer", # Color
-  "ggplot2",      #Plotting
+  "ggplot2",      # Plotting
   "sp",           # Spatial Data
   "caret",        # Machine Learning
   "randomForest",  # RF model
@@ -41,17 +41,16 @@ ipak <- function(pkg){
 
 ipak(packages)
 
-# Import training and testing data 
+# Import training and testing datasets 
 list.files("./Data", pattern = "csv$", full.names = TRUE)
 
 # 1.) Training Data
-
 data_train <-  read.csv("./Data/TRAINING.csv", header = T)
 data_train <-(na.omit(data_train))
 data_train <-data.frame(data_train)  # to remove the unwelcomed attributes
 
 
-# Aspect Settings for Training
+# Aspect Settings for Training since its categorical dataset
 data_train$ASPECT_grouped <-ifelse(data_train$ASPECT<0,-1,data_train$ASPECT)
 ASPECTr<-cut(
   data_train$ASPECT_grouped,
@@ -72,12 +71,12 @@ data_train = cbind(data_train, flags) # combine the ASPECTS with original data
 summary(data_train)
 data_train <-(na.omit(data_train))
 
-# Remove the original Aspect data
+# Removing the original Aspect data
 data_train <- data_train[,-2] # Removing original Aspect data
 data_train <- data_train[,-14] # Removing Aspect_grouped
 #data_train <- data_train[,-14] # Removing Flat Areas 
 
-# LULC setting for Training
+# LULC setting for Training since it is also categorical dataset
 LULCTr<-cut(
   data_train$LULC, 
   seq(1,9,1), 
@@ -92,11 +91,11 @@ flags = data.frame(Reduce(cbind,lapply(levels(LULCTr),function(x){(LULCTr == x)*
 names(flags) = levels(LULCTr)
 data_train = cbind(data_train, flags) # combine the LULC with original data
 
-# Remove the original LULC
+# Removing the original LULC
 data_train <- data_train[,-7] # To remove original LULC
 data_train <-(na.omit(data_train))
 
-# Lithology setting for training
+# Lithology setting for training since it is also categorical dataset
 LithologyTr<-cut(
   data_train$LITHOLOGY, 
   seq(1,11,1), 
@@ -111,15 +110,15 @@ flags = data.frame(Reduce(cbind,lapply(levels(LithologyTr),function(x){(Litholog
 names(flags) = levels(LithologyTr)
 data_train = cbind(data_train, flags) # combine the LITHOLOGY with original data
 
-# Remove the original Lithology
+# Removing the original Lithology
 data_train <- data_train[,-6] # to remove LITHOLOGY
 
 
-# Count the number of 1 and 0 elements with the values of dependent vector
+# Count the number of 1 and 0 elements with the values of the dependent vector
 as.data.frame(table(data_train$Training))
 
 
-# Normalization
+# Scaling the training data via Normalization
 maxs <- apply(data_train, 2, max) 
 mins <- apply(data_train, 2, min)
 scaled_train <- as.data.frame(scale(data_train, center = mins, scale = maxs - mins))
@@ -135,7 +134,7 @@ data_test <-data.frame(data_test)
 str(data_test)
 as.data.frame(table(data_test$Testing))
 
-# Aspect Settings for Testing
+# Aspect Settings for Testing since it is categorical dataset
 data_test$ASPECT_grouped <-ifelse(data_test$ASPECT<0,-1,data_test$ASPECT)
 ASPECTe<-cut(
   data_test$ASPECT_grouped,
@@ -155,12 +154,12 @@ data_test = cbind(data_test, flags) # combine the ASPECTS with original data
 summary(data_test)
 data_test <-(na.omit(data_test))
 
-# Remove the original Aspect data
+# Removing the original Aspect data
 data_test <- data_test[,-2] # Removing original Aspect data
 data_test <- data_test[,-14] # Removing ASPECT_grouped
 #data_test <- data_test[,-14] # Removing Flat Areas
 
-# LULC setting for Testing
+# LULC setting for Testing since it is also categorical dataset
 LULCTe<-cut(
   data_test$LULC, 
   seq(1,9,1), 
@@ -175,12 +174,12 @@ flags = data.frame(Reduce(cbind,lapply(levels(LULCTe),function(x){(LULCTe == x)*
 names(flags) = levels(LULCTe)
 data_test = cbind(data_test, flags) # combine the LULC with original data
 
-# Remove the original LULC
+# Removing the original LULC
 data_test <- data_test[,-7] # To remove LULC
 summary(data_test)
 data_test <-(na.omit(data_test))
 
-# Lithology setting for testing
+# Lithology setting for testing since it is also the categorical dataset
 LithologyTe<-cut(
   data_test$LITHOLOGY, 
   seq(1,11,1), 
@@ -196,21 +195,21 @@ flags = data.frame(Reduce(cbind,lapply(levels(LithologyTe),function(x){(Litholog
 names(flags) = levels(LithologyTe)
 data_test = cbind(data_test, flags) # combine the LITHOLOGY with original data
 
-# Remove the original Lithology
+# Removing the original Lithology
 data_test <- data_test[,-6] # to remove LITHOLOGY
 summary(data_test)
 data_test <-(na.omit(data_test))
 
 
-# Scale the data
+# Scaling the testing data via Normalization
 maxs <- apply(data_test, 2, max) 
 mins <- apply(data_test, 2, min)
 scaled_test <- as.data.frame(scale(data_test, center = mins, scale = maxs - mins))
 scaled_tst <-scaled_test
 scaled_tst$Testing <- ifelse(scaled_tst$Testing == 1, "yes","no")
 
-# RANDOM FOREST MODELING
 
+# RANDOM FOREST MODELING
 rf_control <- trainControl(
   method = "cv",
   number = 5,
@@ -233,11 +232,8 @@ rf_model <- train(
 )
 
 print(rf_model)
-rf_importance <- varImp(rf_model, scale = T)
-print(rf_importance)
-plot(rf_importance, main = "Variable Importance in Random Forest")
 
-# For Determining Mean Decrease Accuracy and Mean Decrease Gini
+# For Determining Mean Decrease Accuracy(MDA) and Mean Decrease Gini (MDG)
 set.seed(1234)
 rf_mod <- randomForest(
   Training ~.,
@@ -246,11 +242,12 @@ rf_mod <- randomForest(
   nodesize = 5,
   importance = TRUE
 )
-# Calculate variable importance
+# Calculating the variable importance
 var_importance <- importance(rf_mod)
 var_importance_df <- as.data.frame(var_importance)
 var_importance_df$variable <- rownames(var_importance_df)
 
+# Saving the MDA and MDG in an excel file 
 write.xlsx(var_importance_df,"Variable_Importance_RF.xlsx")
 
 # LOGISTIC REGRESSION MODEL
@@ -266,16 +263,18 @@ lr_model <- glm(
 )
 
 summary(lr_model)
+
 # Extracting coefficients and other details into a data frame
 coefficients <- as.data.frame(coef(summary(lr_model)))
 coefficients$Variable <- rownames(coefficients)
+# Saving the coefficients value of the model in csv file format 
 write.csv(coefficients,"Model_Summary.csv",row.names=FALSE)
 
-# Extract Model Coefficients
+# Extracting Model Coefficients
 coefficients_n <- summary(lr_model)$coefficients
 coefficients_n <- na.omit(coefficients)
 
-# Construct the equation
+# Constructing the equation
 equation <- paste0(
   "logit(p) = ", round(coefficients_n[1, "Estimate"], 4), 
   paste(
@@ -286,16 +285,16 @@ equation <- paste0(
 cat(equation)
 
 
-#SUCCESS RATE CURVE FOR RF AND LR
+# SUCCESS RATE CURVE (SRC) FOR RF AND LR
 
-# Predict probabilities on the training dataset for Success Rate Curve
+# Predict probabilities on the training dataset for SRC
 
 rf_train_predictions <- as.data.frame(predict(rf_model, scaled_t, type = "prob"))
 rf_train_predictions$predict <- names(rf_train_predictions)[1:2][apply(rf_train_predictions[,1:2], 1, which.max)]
 rf_train_predictions$observed <- as.factor(scaled_t$Training)
 head(rf_train_predictions,2)
 
-# RF AUC-ROC FOR SUCCESS RATE CURVE
+# RF AUC-ROC FOR SRC
 
 png("Success_Rate_Curve_RF_LR.png",width=1600,height=1200,res=300)
 
@@ -315,9 +314,9 @@ roc_rf_train <- roc(ifelse(rf_train_predictions$observed=="yes","no-yes","yes"),
                     auc.polygon=F
                     )
 
-# ADDING LR AUC ROC FOR SUCCESS RATE CURVE
+# ADDING LR AUC ROC FOR SRC
 
-# Predicting Probabilities on Training Datasets for SUCCESS RATE CURVE 
+# Predicting Probabilities on Training Datasets for SRC
 
 lr_train_predictions <-predict(
   lr_model, 
@@ -361,15 +360,15 @@ grid(nx=NULL,ny=NULL,col="gray",lty="dotted",lwd=0.5)
 # Close the device
 dev.off()
 
-# PREDICTION RATE CURVE RF AND LR
+# PREDICTION RATE CURVE (PRC) FOR RF AND LR
 
-# Predicting probabilities on the test dataset for Prediction Rate Curve
+# Predicting probabilities on the test dataset for PRC
 rf_test_predictions <- as.data.frame(predict(rf_model, scaled_tst, type = "prob"))
 rf_test_predictions$predict <- names(rf_test_predictions)[1:2][apply(rf_test_predictions[,1:2], 1, which.max)]
 rf_test_predictions$observed <- as.factor(scaled_tst$Testing)
 head(rf_test_predictions,2)
 
-# RF AUC-ROC FOR PREDICTION RATE CURVE
+# RF AUC-ROC FOR PRC
 png("Prediction_Rate_Curve_RF_LR.png",width=1600,height=1200,res=300)
 par(pty="s")
 roc_rf_test <- roc(ifelse(rf_test_predictions$observed=="yes","no-yes","yes"), 
@@ -386,7 +385,7 @@ roc_rf_test <- roc(ifelse(rf_test_predictions$observed=="yes","no-yes","yes"),
                    print.auc.x=45
                    )
 
-# Predicting Probabilities on Test Datasets for PREDICTION RATE CURVE 
+# Predicting Probabilities on Test Datasets for PRC
 
 lr_test_predictions <-predict(
     lr_model, 
@@ -398,7 +397,7 @@ lr_test_predictions <-predict(
 # Converting probabilities to binary classes (threshold = 0.5)
 lr_test_class <- ifelse(lr_test_predictions>0.5,"yes","no")
 
-# LR AUC-ROC FOR PREDICTION RATE CURVE
+# LR AUC-ROC FOR PRC
 # Ensuring Testing is a factor with two levels 
 scaled_tst$Testing <- as.factor(scaled_tst$Testing)
 levels(scaled_tst$Testing) <- c("no","yes")
@@ -430,11 +429,11 @@ grid(nx=NULL,ny=NULL,col="gray",lty="dotted",lwd=0.5)
 #Close the device
 dev.off()
 
-# CONFUSION MATRICES
+# GENERATING CONFUSION MATRICES
 
 # RF MODEL
 
-#Confusion Matrix for Training datasets in RF Model
+# Confusion Matrix for Training datasets in RF Model
 cmtr_rf_model <- predict(rf_model,scaled_t[,c(-1)], type="raw")
 confusionMatrix(cmtr_rf_model,as.factor(scaled_t$Training))
 
@@ -451,11 +450,11 @@ confusionMatrix(as.factor(lr_train_class), as.factor(scaled_t$Training))
 confusionMatrix(as.factor(lr_test_class),as.factor(scaled_tst$Testing))
 
 
-# Produce LSM map using Training model results and Raster layers data
+# Producing LSM maps using Training model results and Rasters layers data
 
-# Import Rasters
+# Importing Rasters
 
-# load all the data
+# Loading all the landslide determinants raster data
 Aspect = raster("MyData/Aspect.tif")
 Dist2Drain = raster("MyData/Dist2Drain.tif")
 Dist2Fault = raster("MyData/Dist2Fault.tif")
@@ -472,7 +471,6 @@ TWI = raster("MyData/TWI.tif")
 
 
 # Resampling the datasets to common extent and resolutions
-
 Re_Aspect <- resample(Aspect,Elevation, resample='bilinear')
 Re_Dist2Drain <- resample(Dist2Drain,Elevation, resample='bilinear')
 Re_Dist2Fault <- resample(Dist2Fault,Elevation, resample='bilinear')
@@ -488,8 +486,9 @@ Re_SPI <- resample(SPI,Elevation, resample='bilinear')
 Re_TWI <- resample(TWI,Elevation, resample='bilinear')
 
 
-# create resampled Rasters
+# Creating directory to save resampled Rasters
 dir.create("C:/Users/Binish Raj Khanal/Desktop/WD/ReData")  
+# Saving the resampled rasters to the directory
 writeRaster(Re_Aspect,"ReData/ASPECT.tif", overwrite=TRUE)
 writeRaster(Re_Dist2Drain,"ReData/DIST2DRAIN.tif", overwrite=TRUE)
 writeRaster(Re_Dist2Fault,"ReData/DIST2FAULT.tif", overwrite=TRUE)
@@ -504,7 +503,7 @@ writeRaster(Re_Slope,"ReData/SLOPE.tif", overwrite=TRUE)
 writeRaster(Re_SPI,"ReData/SPI.tif", overwrite=TRUE)
 writeRaster(Re_TWI,"ReData/TWI.tif", overwrite=TRUE)
 
-# Load resampled rasters
+# Loading the resampled rasters
 ASPECT = raster("ReData/ASPECT.tif")
 DIST2DRAIN = raster("ReData/DIST2DRAIN.tif")
 DIST2FAULT = raster("ReData/DIST2FAULT.tif")
@@ -520,7 +519,7 @@ SPI = raster("ReData/SPI.tif")
 TWI = raster("ReData/TWI.tif")
 
 
-# check attributes and projection and extent whether same for all or not
+# Checking attributes and projection and extent whether same for all or not
 extent(ASPECT)
 extent(DIST2DRAIN)
 extent(DIST2FAULT)
@@ -536,17 +535,14 @@ extent(SPI)
 extent(TWI)
 
 
-# stack multiple raster files
+# Stacking multiple raster files
 Stack_List= list.files(path = "./ReData",pattern = "tif$", full.names = TRUE)
 Rasters=stack(Stack_List)
 names(Rasters)
 
-
-# Convert rasters to dataframe with Long-Lat
-# Convert raster to dataframe with Long-Lat
+# Converting raster to dataframe with Long-Lat
 Rasters.df = as.data.frame(Rasters, xy = TRUE, na.rm = TRUE)
 head(Rasters.df,1)
-
 Rasters.df_N <- Rasters.df[,c(-1,-2)] # remove x, y
 
 
@@ -574,7 +570,7 @@ Rasters.df_N = cbind(Rasters.df_N, flagsras) # combine the ASPECTS with original
 summary(Rasters.df_N)
 Rasters.df_N <-(na.omit(Rasters.df_N))
 
-# Remove the original Aspect data
+# Removing the original Aspect data
 Rasters.df_N <- Rasters.df_N[,-1] # Removing Original Aspect data
 Rasters.df_N <- Rasters.df_N[,-13] # Removing ASPECT_grouped
 #Rasters.df_N <- Rasters.df_N[,-13] # Removing flat areas
@@ -595,7 +591,7 @@ names(flagsras) = levels(LULCras)
 Rasters.df_N = cbind(Rasters.df_N, flagsras) # combine the LULC with original data
 
 
-# Remove the original LULC
+# Removing the original LULC
 Rasters.df_N <- Rasters.df_N[,-6] # To remove original LULC
 summary(Rasters.df_N)
 Rasters.df_N <-(na.omit(Rasters.df_N))
@@ -615,14 +611,14 @@ flagsras = data.frame(Reduce(cbind,lapply(levels(Lithologyras),function(x){(Lith
 names(flagsras) = levels(Lithologyras)
 Rasters.df_N = cbind(Rasters.df_N, flagsras) # combine the LITHOLOGY with original data
 
-# Remove the original Lithology
+# Removing the original Lithology
 Rasters.df_N <- Rasters.df_N[,-5] # to remove LITHOLOGY
 
 summary(Rasters.df_N)
 Rasters.df_N <-(na.omit(Rasters.df_N))
 str(Rasters.df_N)
 
-# Scale the numeric variables
+# Scaling the numeric variables via normalization
 
 maxss <- apply(Rasters.df_N, 2, max) 
 minss <- apply(Rasters.df_N, 2, min)
@@ -646,6 +642,8 @@ proj4string(r_ave_no)=CRS(projection(ELEVATION))
 
 # Plot Maps
 spplot(r_ave_yes, main="Landslides Susceptibility Map using RF")
+
+# Saving the susceptibility map from RF model in Geotiff format.
 writeRaster(r_ave_yes,filename="Prediction_RF_Tunned_Landslides.tif", format="GTiff", overwrite=TRUE) 
 
 spplot(r_ave_no, main="Non-slides Susceptibility Map using RF")
@@ -661,10 +659,12 @@ lr_raster <- rasterFromXYZ(as.data.frame(Rasters.df)[,c("x","y","LR_YES")])
 proj4string(lr_raster)<- CRS(projection(ELEVATION))
 
 spplot(lr_raster, main = "Landslide Susceptibility Map using Logistic Regression")
+
+# Saving the susceptibility map from LR model in Geotiff format
 writeRaster(lr_raster, filename = "Prediction_LR_Landslide.tif", format = "GTiff",overwrite=TRUE)
 
 
-# Multicollinearity Check
+# Multicollinearity Check if required
 library(car)
 train <-  read.csv("./Data/TRAINING.csv", header = T)
 vif_model <- glm(
@@ -679,8 +679,5 @@ summary(vif_model)
 # ASPECT    DIST2DRAIN    DIST2FAULT     DIST2ROAD     ELEVATION     LITHOLOGY          LULC 
 # 1.112526      1.772301      1.619397      1.312533      2.805439      1.386238      1.063864 
 # NDVI PLANCURVATURE PRECIPITATION         SLOPE           SPI           TWI 
-# 1.162232      1.713889      2.357133      2.841957      2.746686      2.117785 
-
-
-
-
+# 1.162232      1.713889      2.357133      2.841957      2.746686      2.117785
+# Since VIF values are less than 10 for all the determinants, the Multicollinearity test shows no collinearity between the determinants. Hence, all determinants are chosen during the LSM modeling. 
